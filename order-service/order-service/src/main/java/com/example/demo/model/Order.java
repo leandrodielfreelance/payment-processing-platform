@@ -3,6 +3,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
 
+
 @Entity
 @Table(name = "orders")
 @Getter
@@ -14,7 +15,7 @@ public class Order {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
+    private String status;
     private String product;
     private Double amount;
     private LocalDateTime createdAt;
