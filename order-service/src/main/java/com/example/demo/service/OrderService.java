@@ -1,5 +1,6 @@
 package com.example.demo.service;
 
+import com.example.demo.producer.OrderEventProducer;
 import com.example.demo.model.Order;
 import com.example.demo.repository.OrderRepository;
 import org.springframework.stereotype.Service;
@@ -11,18 +12,34 @@ import java.util.List;
 public class OrderService {
 
     private final OrderRepository repository;
-
-    public OrderService(OrderRepository repository) {
-        this.repository = repository;
+    private final OrderEventProducer orderEventProducer;
+    
+    public OrderService(OrderRepository orderRepository, OrderEventProducer orderEventProducer) {
+        this.repository = orderRepository;
+        this.orderEventProducer = orderEventProducer;
     }
 
     public Order createOrder(String product, Double amount) {
+
         Order order = new Order();
         order.setProduct(product);
         order.setAmount(amount);
         order.setStatus("NEW");
         order.setCreatedAt(LocalDateTime.now());
-        return repository.save(order);
+
+        Order saved = repository.save(order);
+
+        String event = """
+                {
+                  "orderId": %d,
+                  "product": "%s",
+                  "amount": %s
+                }
+                """.formatted(saved.getId(), product, amount);
+
+        orderEventProducer.sendOrderCreated(event);
+
+        return saved;
     }
 
     public List<Order> getAllOrders() {
